@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MultiCast Code</title>
+    <link rel="stylesheet" href="styles2.css">
+    <!-- Agregar Prism.js para resaltado de sintaxis -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+</head>
+<body>
+    <a href="javascript:void(0);" class="button2" onclick="history.back()">
+        <div class="button-box">
+            <span class="button-elem">
+                <svg viewBox="0 0 46 40" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M46 20.038c0-.7-.3-1.5-.8-2.1l-16-17c-1.1-1-3.2-1.4-4.4-.3-1.2 1.1-1.2 3.3 0 4.4l11.3 11.9H3c-1.7 0-3 1.3-3 3s1.3 3 3 3h33.1l-11.3 11.9c-1 1-1.2 3.3 0 4.4 1.2 1.1 3.3.8 4.4-.3l16-17c.5-.5.8-1.1.8-1.9z"
+                    ></path>
+                </svg>
+            </span>
+            <span class="button-elem">
+                <svg viewBox="0 0 46 40" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M46 20.038c0-.7-.3-1.5-.8-2.1l-16-17c-1.1-1-3.2-1.4-4.4-.3-1.2 1.1-1.2 3.3 0 4.4l11.3 11.9H3c-1.7 0-3 1.3-3 3s1.3 3 3 3h33.1l-11.3 11.9c-1 1-1.2 3.3 0 4.4 1.2 1.1 3.3.8 4.4-.3l16-17c.5-.5.8-1.1.8-1.9z"
+                    ></path>
+                </svg>
+            </span>
+        </div>
+    </a>
+<section><header><h1>MultiCast</h1></header></section>
+    <main class="code-gallery">
+        
+        <!-- Código de ejemplo 1 -->
+        <section class="code-card">
+            <h2>ClienteMulticast.java</h2>
+            <pre>
+                <code class="language-java">
+package com.mycompany.multicast;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
+import java.util.Scanner;
+
+public class ClienteMulticast implements Runnable {
+    private static final String MULTICAST_GROUP = "224.0.0.3";
+    private static final int PORT = 6789;
+    private String nombreUsuario;
+
+    public ClienteMulticast(String nombreUsuario) {
+        this.nombreUsuario = nombreUsuario;
+    }
+
+    public static void main(String[] args) {
+        // Crear tres instancias de clientes
+        new Thread(new ClienteMulticast("Cliente 1")).start();
+        new Thread(new ClienteMulticast("Cliente 2")).start();
+        new Thread(new ClienteMulticast("Cliente 3")).start();
+    }
+
+    @Override
+    public void run() {
+        try (MulticastSocket socket = new MulticastSocket(PORT)) {
+            InetAddress group = InetAddress.getByName(MULTICAST_GROUP);
+            socket.joinGroup(group);
+
+            // Hilo para recibir mensajes
+            new Thread(() -> recibirMensajes(socket)).start();
+
+            // Enviar mensajes
+            enviarMensajes(socket, group);
+
+            socket.leaveGroup(group);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void recibirMensajes(MulticastSocket socket) {
+        try {
+            while (true) {
+                byte[] buffer = new byte[1024];
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                socket.receive(packet);
+                String mensajeRecibido = new String(packet.getData(), 0, packet.getLength());
+                System.out.println(nombreUsuario + " recibió: " + mensajeRecibido);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void enviarMensajes(MulticastSocket socket, InetAddress group) {
+        try (Scanner scanner = new Scanner(System.in)) {
+            while (true) {
+                System.out.print(nombreUsuario + " escribe un mensaje: ");
+                String mensaje = scanner.nextLine();
+                if (mensaje.equalsIgnoreCase("salir")) break;
+
+                mensaje = nombreUsuario + ": " + mensaje;
+                DatagramPacket packet = new DatagramPacket(mensaje.getBytes(), mensaje.length(), group, PORT);
+                socket.send(packet);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+            </code>
+        </pre>
+    </section>
+    <section class="code-card">
+        <h2>ClienteMulticastGUI.java</h2>
+        <pre>
+            <code class="language-java">
+package com.mycompany.multicast;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
+
+public class ClienteMulticastGUI extends JFrame implements Runnable {
+    private static final String MULTICAST_GROUP = "224.0.0.3";
+    private static final int PORT = 6789;
+    private String nombreUsuario;
+    private JTextArea chatArea;
+    private JTextField inputField;
+    private MulticastSocket socket;
+    private InetAddress group;
+
+    public ClienteMulticastGUI(String nombreUsuario) {
+        this.nombreUsuario = nombreUsuario;
+        initUI();
+        initSocket();
+    }
+
+    private void initUI() {
+        setTitle("Chat - " + nombreUsuario);
+        setSize(400, 600);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+        chatArea = new JTextArea();
+        chatArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(chatArea);
+
+        inputField = new JTextField();
+        inputField.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                enviarMensaje();
+            }
+        });
+
+        JButton sendButton = new JButton("Enviar");
+        sendButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                enviarMensaje();
+            }
+        });
+
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.add(inputField, BorderLayout.CENTER);
+        panel.add(sendButton, BorderLayout.EAST);
+
+        add(scrollPane, BorderLayout.CENTER);
+        add(panel, BorderLayout.SOUTH);
+    }
+
+    private void initSocket() {
+        try {
+            socket = new MulticastSocket(PORT);
+            group = InetAddress.getByName(MULTICAST_GROUP);
+            socket.joinGroup(group);
+
+            // Iniciar el hilo para recibir mensajes después de inicializar el socket
+            new Thread(this::recibirMensajes).start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void enviarMensaje() {
+        try {
+            String mensaje = nombreUsuario + ": " + inputField.getText();
+            DatagramPacket packet = new DatagramPacket(mensaje.getBytes(), mensaje.length(), group, PORT);
+            socket.send(packet);
+            inputField.setText("");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void recibirMensajes() {
+        try {
+            while (true) {
+                byte[] buffer = new byte[1024];
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                socket.receive(packet);
+                String mensajeRecibido = new String(packet.getData(), 0, packet.getLength());
+                chatArea.append(mensajeRecibido + "\n");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void run() {
+        try {
+            socket = new MulticastSocket(PORT);
+            group = InetAddress.getByName(MULTICAST_GROUP);
+            socket.joinGroup(group);
+
+            // Hilo para recibir mensajes
+            new Thread(this::recibirMensajes).start();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            ClienteMulticastGUI cliente1 = new ClienteMulticastGUI("Cliente 1");
+            cliente1.setVisible(true);
+            new Thread(cliente1).start();
+        });
+
+        SwingUtilities.invokeLater(() -> {
+            ClienteMulticastGUI cliente2 = new ClienteMulticastGUI("Cliente 2");
+            cliente2.setVisible(true);
+            new Thread(cliente2).start();
+        });
+
+        SwingUtilities.invokeLater(() -> {
+            ClienteMulticastGUI cliente3 = new ClienteMulticastGUI("Cliente 3");
+            cliente3.setVisible(true);
+            new Thread(cliente3).start();
+        });
+    }
+}
+        </code>
+    </pre>
+</section>
+<section class="code-card">
+    <h2>InterfazUsuario.java</h2>
+    <pre>
+        <code class="language-java">
+package com.mycompany.multicast;
+import javax.swing.*;
+
+public class InterfazUsuario {
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Chat Multicast");
+        frame.setSize(400, 600);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        JPanel panel = new JPanel();
+        frame.add(panel);
+        placeComponents(panel);
+
+        frame.setVisible(true);
+    }
+
+    private static void placeComponents(JPanel panel) {
+        panel.setLayout(null);
+
+        JLabel userLabel = new JLabel("Usuario: Juan Pérez");
+        userLabel.setBounds(10, 10, 200, 25);
+        panel.add(userLabel);
+
+        JTextArea chatArea = new JTextArea();
+        chatArea.setBounds(10, 40, 360, 400);
+        chatArea.setEditable(false);
+        panel.add(chatArea);
+
+        JTextField userText = new JTextField(20);
+        userText.setBounds(10, 450, 260, 25);
+        panel.add(userText);
+
+        JButton sendButton = new JButton("Enviar");
+        sendButton.setBounds(280, 450, 80, 25);
+        panel.add(sendButton);
+    }
+}
+    </code>
+</pre>
+</section>
+<section class="code-card">
+    <h2>ServidorMulticast.java</h2>
+    <pre>
+        <code class="language-java">
+package com.mycompany.multicast;
+
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
+
+public class ServidorMulticast {
+    private static final String MULTICAST_GROUP = "224.0.0.3"; // Dirección de grupo multicast
+    private static final int PORT = 6789; // Puerto del servidor
+
+    public static void main(String[] args) {
+        try (MulticastSocket socket = new MulticastSocket()) {
+            InetAddress group = InetAddress.getByName(MULTICAST_GROUP);
+            String message = "Hola, este es un mensaje multicast!";
+            DatagramPacket packet = new DatagramPacket(message.getBytes(), message.length(), group, PORT);
+            socket.send(packet);
+            System.out.println("Mensaje enviado al grupo multicast: " + MULTICAST_GROUP);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+    </code>
+</pre>
+</section>
+    </main>
+</body>
+</html>

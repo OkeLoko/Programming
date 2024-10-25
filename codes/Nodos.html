@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nodos Code</title>
+    <link rel="stylesheet" href="styles2.css">
+    <!-- Agregar Prism.js para resaltado de sintaxis -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+</head>
+<body>
+    <a href="javascript:void(0);" class="button2" onclick="history.back()">
+        <div class="button-box">
+            <span class="button-elem">
+                <svg viewBox="0 0 46 40" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M46 20.038c0-.7-.3-1.5-.8-2.1l-16-17c-1.1-1-3.2-1.4-4.4-.3-1.2 1.1-1.2 3.3 0 4.4l11.3 11.9H3c-1.7 0-3 1.3-3 3s1.3 3 3 3h33.1l-11.3 11.9c-1 1-1.2 3.3 0 4.4 1.2 1.1 3.3.8 4.4-.3l16-17c.5-.5.8-1.1.8-1.9z"
+                    ></path>
+                </svg>
+            </span>
+            <span class="button-elem">
+                <svg viewBox="0 0 46 40" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M46 20.038c0-.7-.3-1.5-.8-2.1l-16-17c-1.1-1-3.2-1.4-4.4-.3-1.2 1.1-1.2 3.3 0 4.4l11.3 11.9H3c-1.7 0-3 1.3-3 3s1.3 3 3 3h33.1l-11.3 11.9c-1 1-1.2 3.3 0 4.4 1.2 1.1 3.3.8 4.4-.3l16-17c.5-.5.8-1.1.8-1.9z"
+                    ></path>
+                </svg>
+            </span>
+        </div>
+    </a>
+<section><header><h1>Nodos</h1></header></section>
+    <main class="code-gallery">
+        
+        <!-- Código de ejemplo 1 -->
+        <section class="code-card">
+            <h2>Client.java</h2>
+            <pre>
+                <code class="language-java">
+package com.mycompany.nodos;
+
+import java.io.*;
+import java.net.*;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.util.Base64;
+
+public class Client {
+
+    private static final String ALGORITHM = "AES";
+    private static SecretKey key;
+
+    public static void main(String[] args) throws IOException {
+        Socket socket = new Socket("localhost", 8080);
+
+        key = getKey();
+
+        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
+
+        // Autenticación
+        System.out.print("Ingrese usuario: ");
+        String user = stdIn.readLine();
+        System.out.print("Ingrese contraseña: ");
+        String password = stdIn.readLine();
+
+        try {
+            out.println(encrypt(user, key));
+            out.println(encrypt(password, key));
+
+            String receivedUser = decrypt(in.readLine(), key);
+            String receivedPassword = decrypt(in.readLine(), key);
+
+            if (!user.equals(receivedUser) || !password.equals(receivedPassword)) {
+                System.out.println("Autenticación fallida");
+                socket.close();
+                return;
+            } else {
+                System.out.println("Autenticación exitosa");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Inicia hilos para enviar y recibir mensajes
+        new Thread(new ClientSender(socket)).start();
+        new Thread(new ClientReceiver(socket)).start();
+    }
+
+    private static SecretKeySpec getKey() {
+        String keyString = "1234567890123456"; // Clave de 16 caracteres para AES-128
+        return new SecretKeySpec(keyString.getBytes(), ALGORITHM);
+    }
+
+    private static String encrypt(String data, SecretKey key) throws Exception {
+        Cipher cipher = Cipher.getInstance(ALGORITHM);
+        cipher.init(Cipher.ENCRYPT_MODE, key);
+        byte[] encrypted = cipher.doFinal(data.getBytes());
+        return Base64.getEncoder().encodeToString(encrypted);
+    }
+
+    private static String decrypt(String encryptedData, SecretKey key) throws Exception {
+        Cipher cipher = Cipher.getInstance(ALGORITHM);
+        cipher.init(Cipher.DECRYPT_MODE, key);
+        byte[] original = cipher.doFinal(Base64.getDecoder().decode(encryptedData));
+        return new String(original);
+    }
+
+    static class ClientSender implements Runnable {
+        private Socket socket;
+        private PrintWriter out;
+        private BufferedReader stdIn;
+
+        public ClientSender(Socket socket) throws IOException {
+            this.socket = socket;
+            this.out = new PrintWriter(socket.getOutputStream(), true);
+            this.stdIn = new BufferedReader(new InputStreamReader(System.in));
+        }
+
+        @Override
+        public void run() {
+            String outputLine;
+            try {
+                while ((outputLine = stdIn.readLine()) != null) {
+                    out.println(encrypt(outputLine, key));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    static class ClientReceiver implements Runnable {
+        private Socket socket;
+        private BufferedReader in;
+
+        public ClientReceiver(Socket socket) throws IOException {
+            this.socket = socket;
+            this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        }
+
+        @Override
+        public void run() {
+            String inputLine;
+            try {
+                while ((inputLine = in.readLine()) != null) {
+                    System.out.println("Servidor: " + decrypt(inputLine, key));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+            </code>
+        </pre>
+    </section>
+
+    <section class="code-card">
+        <h2>EncryptionUtil.java</h2>
+        <pre>
+            <code class="language-java">
+package com.mycompany.nodos;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.util.Base64;
+
+public class EncryptionUtil {
+    private static final String ALGORITHM = "AES";
+
+    public static String encrypt(String data, SecretKey key) throws Exception {
+        Cipher cipher = Cipher.getInstance(ALGORITHM);
+        cipher.init(Cipher.ENCRYPT_MODE, key);
+        byte[] encrypted = cipher.doFinal(data.getBytes());
+        return Base64.getEncoder().encodeToString(encrypted);
+    }
+
+    public static String decrypt(String encryptedData, SecretKey key) throws Exception {
+        Cipher cipher = Cipher.getInstance(ALGORITHM);
+        cipher.init(Cipher.DECRYPT_MODE, key);
+        byte[] original = cipher.doFinal(Base64.getDecoder().decode(encryptedData));
+        return new String(original);
+    }
+
+    public static SecretKey generateKey() throws Exception {
+        KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM);
+        keyGen.init(128);
+        return keyGen.generateKey();
+    }
+
+    public static void main(String[] args) throws Exception {
+        SecretKey key = generateKey();
+        String encryptedData = encrypt("Hola Mundo", key);
+        System.out.println("Encrypted Data: " + encryptedData);
+        String decryptedData = decrypt(encryptedData, key);
+        System.out.println("Decrypted Data: " + decryptedData);
+    }
+}
+
+
+        </code>
+    </pre>
+</section>
+<section class="code-card">
+    <h2>Server.java</h2>
+    <pre>
+        <code class="language-java">
+package com.mycompany.nodos;
+
+import java.io.*;
+import java.net.*;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.util.Base64;
+
+public class Server {
+
+    private static final String ALGORITHM = "AES";
+    private static SecretKey key;
+
+    public static void main(String[] args) throws IOException {
+        ServerSocket serverSocket = new ServerSocket(8080);
+        System.out.println("Servidor iniciado en el puerto 8080");
+        Socket socket = serverSocket.accept();
+
+        key = getKey();
+
+        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
+
+        // Autenticación
+        System.out.print("Ingrese usuario: ");
+        String user = stdIn.readLine();
+        System.out.print("Ingrese contraseña: ");
+        String password = stdIn.readLine();
+
+        try {
+            out.println(encrypt(user, key));
+            out.println(encrypt(password, key));
+
+            String receivedUser = decrypt(in.readLine(), key);
+            String receivedPassword = decrypt(in.readLine(), key);
+
+            if (!user.equals(receivedUser) || !password.equals(receivedPassword)) {
+                System.out.println("Autenticación fallida");
+                socket.close();
+                return;
+            } else {
+                System.out.println("Autenticación exitosa");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Inicia hilos para enviar y recibir mensajes
+        new Thread(new ServerSender(socket)).start();
+        new Thread(new ServerReceiver(socket)).start();
+    }
+
+    private static SecretKeySpec getKey() {
+        String keyString = "1234567890123456"; // Clave de 16 caracteres para AES-128
+        return new SecretKeySpec(keyString.getBytes(), ALGORITHM);
+    }
+
+    private static String encrypt(String data, SecretKey key) throws Exception {
+        Cipher cipher = Cipher.getInstance(ALGORITHM);
+        cipher.init(Cipher.ENCRYPT_MODE, key);
+        byte[] encrypted = cipher.doFinal(data.getBytes());
+        return Base64.getEncoder().encodeToString(encrypted);
+    }
+
+    private static String decrypt(String encryptedData, SecretKey key) throws Exception {
+        Cipher cipher = Cipher.getInstance(ALGORITHM);
+        cipher.init(Cipher.DECRYPT_MODE, key);
+        byte[] original = cipher.doFinal(Base64.getDecoder().decode(encryptedData));
+        return new String(original);
+    }
+
+    static class ServerSender implements Runnable {
+        private Socket socket;
+        private PrintWriter out;
+        private BufferedReader stdIn;
+
+        public ServerSender(Socket socket) throws IOException {
+            this.socket = socket;
+            this.out = new PrintWriter(socket.getOutputStream(), true);
+            this.stdIn = new BufferedReader(new InputStreamReader(System.in));
+        }
+
+        @Override
+        public void run() {
+            String outputLine;
+            try {
+                while ((outputLine = stdIn.readLine()) != null) {
+                    out.println(encrypt(outputLine, key));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    static class ServerReceiver implements Runnable {
+        private Socket socket;
+        private BufferedReader in;
+
+        public ServerReceiver(Socket socket) throws IOException {
+            this.socket = socket;
+            this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        }
+
+        @Override
+        public void run() {
+            String inputLine;
+            try {
+                while ((inputLine = in.readLine()) != null) {
+                    System.out.println("Cliente: " + decrypt(inputLine, key));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+    </code>
+</pre>
+</section>
+    </main>
+</body>
+</html>

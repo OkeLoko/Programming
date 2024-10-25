@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2P2 Code</title>
+    <link rel="stylesheet" href="styles2.css">
+    <!-- Agregar Prism.js para resaltado de sintaxis -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+</head>
+<body>
+    <a href="javascript:void(0);" class="button2" onclick="history.back()">
+        <div class="button-box">
+            <span class="button-elem">
+                <svg viewBox="0 0 46 40" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M46 20.038c0-.7-.3-1.5-.8-2.1l-16-17c-1.1-1-3.2-1.4-4.4-.3-1.2 1.1-1.2 3.3 0 4.4l11.3 11.9H3c-1.7 0-3 1.3-3 3s1.3 3 3 3h33.1l-11.3 11.9c-1 1-1.2 3.3 0 4.4 1.2 1.1 3.3.8 4.4-.3l16-17c.5-.5.8-1.1.8-1.9z"
+                    ></path>
+                </svg>
+            </span>
+            <span class="button-elem">
+                <svg viewBox="0 0 46 40" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M46 20.038c0-.7-.3-1.5-.8-2.1l-16-17c-1.1-1-3.2-1.4-4.4-.3-1.2 1.1-1.2 3.3 0 4.4l11.3 11.9H3c-1.7 0-3 1.3-3 3s1.3 3 3 3h33.1l-11.3 11.9c-1 1-1.2 3.3 0 4.4 1.2 1.1 3.3.8 4.4-.3l16-17c.5-.5.8-1.1.8-1.9z"
+                    ></path>
+                </svg>
+            </span>
+        </div>
+    </a>
+<section><header><h1>2P2</h1></header></section>
+    <main class="code-gallery">
+        
+        <!-- Código de ejemplo 1 -->
+        <section class="code-card">
+            <h2>Cliente TCP</h2>
+            <pre>
+                <code class="language-java">
+package com.mycompany.tcpp2p;
+
+import java.io.*;
+import java.net.*;
+import java.util.List;
+
+public class Client {
+    private List&lt;String&gt; serverNames;
+    private List&lt;Integer&gt; ports;
+    private String username;
+
+    public Client(List&lt;String&gt; serverNames, List&lt;Integer&gt; ports, String username) {
+        this.serverNames = serverNames;
+        this.ports = ports;
+        this.username = username;
+    }
+
+    public void sendMessage(String message) {
+        String formattedMessage = username + ": " + message;
+        for (int i = 0; i &lt; serverNames.size(); i++) {
+            try {
+                Socket client = new Socket(serverNames.get(i), ports.get(i));
+                OutputStream outToServer = client.getOutputStream();
+                DataOutputStream out = new DataOutputStream(outToServer);
+                out.writeUTF(formattedMessage);
+                client.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+            </code>
+        </pre>
+    </section>
+        
+        <!-- Agregar más secciones de código aquí -->
+        <section class="code-card">
+            <h2>2P2UI.java</h2>
+            <pre><code class="language-java">
+                package com.mycompany.tcpp2p;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+
+public class P2PUI extends JFrame {
+    private JTextField messageField;
+    private JTextArea chatArea;
+    private JButton sendButton;
+    private Client client;
+
+    public P2PUI(Client client) {
+        super("P2P Chat");
+        this.client = client;
+
+        messageField = new JTextField();
+        chatArea = new JTextArea();
+        sendButton = new JButton("Send");
+
+        sendButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String message = messageField.getText();
+                chatArea.append("You: " + message + "\n");
+                client.sendMessage(message);
+                messageField.setText("");
+            }
+        });
+
+        setLayout(new BorderLayout());
+        add(new JScrollPane(chatArea), BorderLayout.CENTER);
+        add(messageField, BorderLayout.SOUTH);
+        add(sendButton, BorderLayout.EAST);
+    }
+
+    public void showMessage(String message) {
+        chatArea.append(message + "\n");
+    }
+}
+
+            </code></pre>
+        </section>
+
+        <section class="code-card">
+            <h2>ServerThread.java</h2>
+            <pre><code class="language-java">
+                package com.mycompany.tcpp2p;
+
+import java.io.*;
+import java.net.*;
+
+public class ServerThread extends Thread {
+    private ServerSocket serverSocket;
+    private P2PUI ui;
+
+    public ServerThread(int port, P2PUI ui) throws IOException {
+        this.serverSocket = new ServerSocket(port);
+        this.ui = ui;
+    }
+
+    public void run() {
+        while (true) {
+            try {
+                Socket socket = serverSocket.accept();
+                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                String message = in.readLine();
+                ui.showMessage(message);
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}     
+            </code></pre>
+        </section>
+    </main>
+</body>
+</html>

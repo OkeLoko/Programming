@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gato AI Code</title>
+    <link rel="stylesheet" href="styles2.css">
+    <!-- Agregar Prism.js para resaltado de sintaxis -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+    
+</head>
+<body>
+    <a href="javascript:void(0);" class="button2" onclick="history.back()">
+        <div class="button-box">
+            <span class="button-elem">
+                <svg viewBox="0 0 46 40" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M46 20.038c0-.7-.3-1.5-.8-2.1l-16-17c-1.1-1-3.2-1.4-4.4-.3-1.2 1.1-1.2 3.3 0 4.4l11.3 11.9H3c-1.7 0-3 1.3-3 3s1.3 3 3 3h33.1l-11.3 11.9c-1 1-1.2 3.3 0 4.4 1.2 1.1 3.3.8 4.4-.3l16-17c.5-.5.8-1.1.8-1.9z"
+                    ></path>
+                </svg>
+            </span>
+            <span class="button-elem">
+                <svg viewBox="0 0 46 40" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M46 20.038c0-.7-.3-1.5-.8-2.1l-16-17c-1.1-1-3.2-1.4-4.4-.3-1.2 1.1-1.2 3.3 0 4.4l11.3 11.9H3c-1.7 0-3 1.3-3 3s1.3 3 3 3h33.1l-11.3 11.9c-1 1-1.2 3.3 0 4.4 1.2 1.1 3.3.8 4.4-.3l16-17c.5-.5.8-1.1.8-1.9z"
+                    ></path>
+                </svg>
+            </span>
+        </div>
+    </a>
+<section><header><h1>Gato con Insteligencia Artificial</h1></header></section>
+    <main class="code-gallery">
+        
+        <!-- Código de ejemplo 1 -->
+        <section class="code-card">
+            <h2>Gato</h2>
+            <pre>
+                <code class="language-java">
+#include <stdio.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <time.h>
+
+// Función para imprimir el tablero
+void imprimirTablero(char tablero[4][4]) {
+    printf("\n");
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            printf(" %c ", tablero[i][j]);
+            if (j < 3) {
+                printf("|");
+            }
+        }
+        printf("\n");
+        if (i < 3) {
+            printf("---+---+---+---\n");
+        }
+    }
+    printf("\n");
+}
+
+// Función para verificar si hay una línea ganadora
+bool verificarGanador(char tablero[4][4], char jugador) {
+    // Verificar filas y columnas
+    for (int i = 0; i < 4; i++) {
+        if ((tablero[i][0] == jugador && tablero[i][1] == jugador && tablero[i][2] == jugador) ||
+            (tablero[0][i] == jugador && tablero[1][i] == jugador && tablero[2][i] == jugador)) {
+            return true;
+        }
+    }
+
+    // Verificar diagonales
+    if ((tablero[0][0] == jugador && tablero[1][1] == jugador && tablero[2][2] == jugador) ||
+        (tablero[2][0] == jugador && tablero[1][1] == jugador && tablero[0][2] == jugador)) {
+        return true;
+    }
+
+    return false;
+}
+
+// Función para realizar la jugada del programa (nivel 1)
+void jugarProgramaNivel1(char tablero[4][4]) {
+    // Tirar en una casilla vacía aleatoriamente
+    int casillasVacias[16];
+    int contador = 0;
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            if (tablero[i][j] == ' ') {
+                casillasVacias[contador++] = i * 4 + j;
+            }
+        }
+    }
+
+    srand(time(NULL));
+    int indiceAleatorio = rand() % contador;
+    int fila = casillasVacias[indiceAleatorio] / 4;
+    int columna = casillasVacias[indiceAleatorio] % 4;
+    tablero[fila][columna] = 'O';
+}
+
+// Función para realizar la jugada del programa (nivel 2)
+void jugarProgramaNivel2(char tablero[4][4]) {
+    // Verificar si el programa puede ganar en la siguiente jugada
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            if (tablero[i][j] == ' ') {
+                tablero[i][j] = 'O';
+                if (verificarGanador(tablero, 'O')) {
+                    return;
+                }
+                tablero[i][j] = ' ';
+            }
+        }
+    }
+
+    // Tirar en una casilla vacía aleatoriamente
+    jugarProgramaNivel1(tablero);
+}
+
+// Función para realizar la jugada del programa (nivel 3)
+void jugarProgramaNivel3(char tablero[4][4]) {
+    // Verificar si el programa puede ganar en la siguiente jugada
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            if (tablero[i][j] == ' ') {
+                tablero[i][j] = 'O';
+                if (verificarGanador(tablero, 'O')) {
+                    return;
+                }
+                tablero[i][j] = ' ';
+            }
+        }
+    }
+
+    // Verificar si el usuario puede ganar en la siguiente jugada y bloquear
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            if (tablero[i][j] == ' ') {
+                tablero[i][j] = 'X';
+                if (verificarGanador(tablero, 'X')) {
+                    tablero[i][j] = 'O';
+                    return;
+                }
+                tablero[i][j] = ' ';
+            }
+        }
+    }
+
+    // Tirar en una casilla vacía aleatoriamente
+    jugarProgramaNivel1(tablero);
+}
+
+// Función principal del juego
+int main() {
+    char tablero[4][4] = { {' ', ' ', ' ', ' '},
+                           {' ', ' ', ' ', ' '},
+                           {' ', ' ', ' ', ' '},
+                           {' ', ' ', ' ', ' '} };
+    int nivel;
+
+    printf("Nivel de inteligencia del programa (1, 2 o 3): ");
+    scanf("%d", &nivel);
+
+    int turno = 0;
+
+    while (true) {
+        imprimirTablero(tablero);
+
+        if (turno % 2 == 0) {
+            printf("Turno del Usuario (X)\n");
+            int fila, columna;
+            printf("Ingrese la fila (0-3): ");
+            scanf("%d", &fila);
+            printf("Ingrese la columna (0-3): ");
+            scanf("%d", &columna);
+            if (tablero[fila][columna] != ' ') {
+                printf("Casilla ocupada. Intente nuevamente.\n");
+                continue;
+            }
+            tablero[fila][columna] = 'X';
+        }
+        else {
+            printf("Turno del Programa (O)\n");
+            if (nivel == 1) {
+                jugarProgramaNivel1(tablero);
+            }
+            else if (nivel == 2) {
+                jugarProgramaNivel2(tablero);
+            }
+            else if (nivel == 3) {
+                jugarProgramaNivel3(tablero);
+            }
+        }
+
+        if (verificarGanador(tablero, 'X')) {
+            imprimirTablero(tablero);
+            printf("¡Ganaste! Tú eres el ganador.\n");
+            break;
+        }
+        else if (verificarGanador(tablero, 'O')) {
+            imprimirTablero(tablero);
+            printf("¡Ganó el programa! Tú perdiste.\n");
+            break;
+        }
+        else if (turno == 15) {
+            imprimirTablero(tablero);
+            printf("¡Empate!\n");
+            break;
+        }
+
+        turno++;
+    }
+
+    return 0;
+}
+
+            </code>
+        </pre>
+    </section>
+    </main>
+</body>
+</html>
